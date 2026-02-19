@@ -377,17 +377,18 @@ function FileDetail({ file, user, onUpdate }) {
 function DraftForm({ onComplete }) {
   const [buildings, setBuildings] = useState([{ name: "", code: "" }]);
   const [contacts, setContacts] = useState([{ name: "", email: "", phone: "", title: "", permission: "notify" }]);
+  const mob = useIsMobile();
 
-  const inp = { width: "100%", padding: "12px 14px", border: `1.5px solid ${P.border}`, borderRadius: 8, fontSize: 16, fontFamily: "inherit", background: "white", boxSizing: "border-box" };
+  const inp = { width: "100%", padding: mob ? "10px 12px" : "12px 14px", border: `1.5px solid ${P.border}`, borderRadius: 8, fontSize: mob ? 15 : 16, fontFamily: "inherit", background: "white", boxSizing: "border-box" };
   const sel = { ...inp, appearance: "none", WebkitAppearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23B0A898' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center" };
-  const sectionRow = { display: "flex", gap: 32, marginBottom: 36, alignItems: "flex-start" };
-  const sidebar = { width: 240, flexShrink: 0 };
-  const sideTitle = { fontSize: 20, fontWeight: 800, color: P.text, margin: 0 };
+  const sectionRow = { display: "flex", flexDirection: mob ? "column" : "row", gap: mob ? 12 : 32, marginBottom: mob ? 24 : 36, alignItems: "flex-start" };
+  const sidebar = mob ? {} : { width: 240, flexShrink: 0 };
+  const sideTitle = { fontSize: mob ? 18 : 20, fontWeight: 800, color: P.text, margin: 0 };
   const sideDesc = { fontSize: 14, color: P.muted, marginTop: 6, lineHeight: 1.5 };
-  const fieldRow = { display: "flex", gap: 16, marginBottom: 16 };
+  const fieldRow = { display: "flex", flexDirection: mob ? "column" : "row", gap: mob ? 12 : 16, marginBottom: mob ? 12 : 16 };
   const label = { fontSize: 14, fontWeight: 700, color: P.text, display: "block", marginBottom: 6 };
   const removeBtn = { background: "none", border: `1.5px solid #D4524D`, borderRadius: 6, color: "#D4524D", fontSize: 13, fontWeight: 600, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit" };
-  const addBtn = { background: "none", border: `1.5px solid ${P.border}`, borderRadius: 8, color: P.text, fontSize: 15, fontWeight: 600, padding: "10px 18px", cursor: "pointer", fontFamily: "inherit" };
+  const addBtn = { background: "none", border: `1.5px solid ${P.border}`, borderRadius: 8, color: P.text, fontSize: 15, fontWeight: 600, padding: "10px 18px", cursor: "pointer", fontFamily: "inherit", width: mob ? "100%" : "auto" };
 
   const addBuilding = () => setBuildings(b => [...b, { name: "", code: "" }]);
   const removeBuilding = (i) => setBuildings(b => b.filter((_, j) => j !== i));
@@ -402,7 +403,7 @@ function DraftForm({ onComplete }) {
           <h3 style={sideTitle}>Details</h3>
           <div style={sideDesc}>Fill out the basic details of your project, including project name, code, school district, project manager, and other key information.</div>
         </div>
-        <div style={{ flex: 1, padding: 24, background: P.sand, borderRadius: 12, border: `1px solid ${P.border}` }}>
+        <div style={{ flex: 1, padding: mob ? 16 : 24, background: P.sand, borderRadius: 12, border: `1px solid ${P.border}` }}>
           <div style={fieldRow}>
             <div style={{ flex: 1 }}>
               <label style={label}>Project name</label>
@@ -444,7 +445,7 @@ function DraftForm({ onComplete }) {
               <input type="text" style={inp} />
             </div>
           </div>
-          <div style={{ display: "flex", gap: 16 }}>
+          <div style={fieldRow}>
             <div style={{ flex: 1 }}>
               <label style={label}>Project type</label>
               <input type="text" style={inp} />
@@ -467,7 +468,7 @@ function DraftForm({ onComplete }) {
         </div>
         <div style={{ flex: 1 }}>
           {buildings.map((b, i) => (
-            <div key={i} style={{ padding: 24, background: P.sand, borderRadius: 12, border: `1px solid ${P.border}`, marginBottom: 10 }}>
+            <div key={i} style={{ padding: mob ? 16 : 24, background: P.sand, borderRadius: 12, border: `1px solid ${P.border}`, marginBottom: 10 }}>
               <div style={fieldRow}>
                 <div style={{ flex: 1 }}>
                   <label style={label}>Name of building</label>
@@ -493,8 +494,8 @@ function DraftForm({ onComplete }) {
         </div>
         <div style={{ flex: 1 }}>
           {contacts.map((c, i) => (
-            <div key={i} style={{ padding: 24, background: P.sand, borderRadius: 12, border: `1px solid ${P.border}`, marginBottom: 10 }}>
-              <div style={{ marginBottom: 16 }}>
+            <div key={i} style={{ padding: mob ? 16 : 24, background: P.sand, borderRadius: 12, border: `1px solid ${P.border}`, marginBottom: 10 }}>
+              <div style={{ marginBottom: mob ? 12 : 16 }}>
                 <label style={label}>Name</label>
                 <input type="text" style={inp} />
               </div>
@@ -548,15 +549,16 @@ const BUILDINGS = [
 
 function ControlNumbersForm({ onComplete }) {
   const [controlNums, setControlNums] = useState(BUILDINGS.map(() => ""));
-  const inp = { width: "100%", padding: "12px 14px", border: `1.5px solid ${P.border}`, borderRadius: 8, fontSize: 16, fontFamily: "inherit", background: "white", boxSizing: "border-box" };
+  const mob = useIsMobile();
+  const inp = { width: "100%", padding: mob ? "10px 12px" : "12px 14px", border: `1.5px solid ${P.border}`, borderRadius: 8, fontSize: mob ? 15 : 16, fontFamily: "inherit", background: "white", boxSizing: "border-box" };
   const readOnly = { ...inp, background: "#F0F0F0", color: P.muted };
   const label = { fontSize: 14, fontWeight: 700, color: P.text, display: "block", marginBottom: 6 };
 
   return (
     <div>
-      <h3 style={{ fontSize: 20, fontWeight: 800, color: P.text, margin: "0 0 16px 0" }}>Buildings</h3>
+      <h3 style={{ fontSize: mob ? 18 : 20, fontWeight: 800, color: P.text, margin: "0 0 16px 0" }}>Buildings</h3>
       {BUILDINGS.map((b, i) => (
-        <div key={i} style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+        <div key={i} style={{ display: "flex", flexDirection: mob ? "column" : "row", gap: mob ? 12 : 16, marginBottom: 20 }}>
           <div style={{ flex: 1 }}>
             <label style={label}>Name</label>
             <input type="text" value={b.name} readOnly style={readOnly} />
