@@ -1,4 +1,15 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" ? window.innerWidth < breakpoint : false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [breakpoint]);
+  return isMobile;
+}
 
 const P = {
   bg: "#FFFDF7", sand: "#F5F0E8", border: "#E8E0D4", borderLight: "#F0EAE0",
@@ -797,7 +808,7 @@ function Checkbox({ checked, indeterminate, onChange, size = 18 }) {
   );
 }
 
-function ReviewDashboard({ files, setFiles, user, onComplete, onBack }) {
+function ReviewDashboard({ files, setFiles, user, onComplete, onBack, isMobile }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [groupBy, setGroupBy] = useState("none");
@@ -874,29 +885,30 @@ function ReviewDashboard({ files, setFiles, user, onComplete, onBack }) {
   };
 
   const allApproved = counts.approved === counts.all;
-  const listHeight = Math.max(200, (typeof window !== "undefined" ? window.innerHeight : 800) - 350);
+  const padH = isMobile ? 12 : 24;
+  const listHeight = Math.max(200, (typeof window !== "undefined" ? window.innerHeight : 800) - (isMobile ? 380 : 350));
 
   return (
-    <div style={{ height: "calc(100vh - 56px)", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Breadcrumb */}
-      <div style={{ padding: "0 24px", height: 48, display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${P.border}`, flexShrink: 0, background: "white" }}>
-        <div onClick={onBack} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: P.blue, fontSize: 14, fontWeight: 600 }}>
-          ← Back to timeline
+      <div style={{ padding: `0 ${padH}px`, height: 48, display: "flex", alignItems: "center", gap: isMobile ? 8 : 16, borderBottom: `1px solid ${P.border}`, flexShrink: 0, background: "white" }}>
+        <div onClick={onBack} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: P.blue, fontSize: isMobile ? 13 : 14, fontWeight: 600, flexShrink: 0 }}>
+          ← {isMobile ? "Back" : "Back to timeline"}
         </div>
-        <div style={{ flex: 1, textAlign: "center", fontSize: 14, fontWeight: 600, color: P.text }}>
-          Step 6 of {STEPS.length} · Technical Review
+        <div style={{ flex: 1, textAlign: "center", fontSize: isMobile ? 13 : 14, fontWeight: 600, color: P.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {isMobile ? "Technical Review" : `Step 6 of ${STEPS.length} · Technical Review`}
         </div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: P.green }}>
-          {counts.approved} / {counts.all}
+        <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 700, color: P.green, flexShrink: 0 }}>
+          {counts.approved}/{counts.all}
         </div>
       </div>
 
       {/* Toolbar */}
-      <div style={{ padding: "12px 24px", borderBottom: `1px solid ${P.borderLight}`, flexShrink: 0, background: P.bg }}>
+      <div style={{ padding: `12px ${padH}px`, borderBottom: `1px solid ${P.borderLight}`, flexShrink: 0, background: P.bg }}>
         <input
           type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
           placeholder={`Search ${files.length.toLocaleString()} files...`}
-          style={{ width: "100%", padding: "10px 14px", border: `1.5px solid ${P.border}`, borderRadius: 8, fontSize: 15, fontFamily: "inherit", background: "white", boxSizing: "border-box", marginBottom: 10 }}
+          style={{ width: "100%", padding: isMobile ? "8px 12px" : "10px 14px", border: `1.5px solid ${P.border}`, borderRadius: 8, fontSize: isMobile ? 14 : 15, fontFamily: "inherit", background: "white", boxSizing: "border-box", marginBottom: 10 }}
         />
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
           {[
@@ -928,31 +940,31 @@ function ReviewDashboard({ files, setFiles, user, onComplete, onBack }) {
       {/* Bulk action bar — visible when files are checked */}
       {checked.size > 0 && (
         <div style={{
-          padding: "8px 24px", display: "flex", alignItems: "center", gap: 12,
+          padding: `8px ${padH}px`, display: "flex", alignItems: "center", gap: isMobile ? 8 : 12,
           background: P.blueBg, borderBottom: `1px solid ${P.blueBorder}`, flexShrink: 0,
         }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: P.blue }}>{checked.size} selected</span>
+          <span style={{ fontSize: isMobile ? 13 : 14, fontWeight: 700, color: P.blue }}>{checked.size} selected</span>
           <button onClick={bulkApprove} style={{
-            padding: "6px 14px", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            padding: isMobile ? "5px 10px" : "6px 14px", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
             background: P.green, color: "white", border: "none",
           }}>Approve Selected</button>
           <button onClick={() => setChecked(new Set())} style={{
-            padding: "6px 14px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+            padding: isMobile ? "5px 10px" : "6px 14px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
             background: "white", color: P.muted, border: `1px solid ${P.border}`,
-          }}>Clear Selection</button>
+          }}>Clear</button>
         </div>
       )}
 
       {/* Column header with master checkbox */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 12, padding: "8px 24px",
+        display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, padding: `8px ${padH}px`,
         borderBottom: `2px solid ${P.border}`, flexShrink: 0, background: "white",
       }}>
         <Checkbox checked={allVisibleChecked} indeterminate={!allVisibleChecked && someVisibleChecked} onChange={toggleAll} />
         <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: P.light, textTransform: "uppercase", letterSpacing: "0.06em" }}>File</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: P.light, textTransform: "uppercase", letterSpacing: "0.06em", width: 90, textAlign: "center" }}>Discipline</span>
+        {!isMobile && <span style={{ fontSize: 12, fontWeight: 700, color: P.light, textTransform: "uppercase", letterSpacing: "0.06em", width: 90, textAlign: "center" }}>Discipline</span>}
         <span style={{ fontSize: 12, fontWeight: 700, color: P.light, textTransform: "uppercase", letterSpacing: "0.06em", width: 28, textAlign: "center" }}>Status</span>
-        <span style={{ width: 16 }} />
+        {!isMobile && <span style={{ width: 16 }} />}
       </div>
 
       {/* File list */}
@@ -979,7 +991,7 @@ function ReviewDashboard({ files, setFiles, user, onComplete, onBack }) {
                 }
               };
               return (
-                <div key={`h-${item.label}`} style={{ height: 56, display: "flex", alignItems: "center", gap: 12, padding: "0 24px", background: P.sand, borderBottom: `1px solid ${P.borderLight}` }}>
+                <div key={`h-${item.label}`} style={{ height: 56, display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, padding: `0 ${padH}px`, background: P.sand, borderBottom: `1px solid ${P.borderLight}` }}>
                   <Checkbox checked={allGroupChecked} indeterminate={!allGroupChecked && someGroupChecked} onChange={toggleGroup} />
                   <span style={{ fontSize: 14, fontWeight: 800, color: P.text }}>{item.label}</span>
                   <span style={{ fontSize: 13, color: P.muted }}>{item.count} files · {item.approved} approved</span>
@@ -991,7 +1003,7 @@ function ReviewDashboard({ files, setFiles, user, onComplete, onBack }) {
             const mine = (f.status === "feedback" && actor === "job_owner") || (f.status === "pending" && actor === "assigned_reviewer");
             return (
               <div key={f.id} onClick={() => setOpenFile(f.id)} style={{
-                height: 56, display: "flex", alignItems: "center", gap: 12, padding: "0 24px",
+                height: 56, display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, padding: `0 ${padH}px`,
                 cursor: "pointer", borderBottom: `1px solid ${P.borderLight}`,
                 background: isChecked ? P.blueBg : mine ? RC[actor].bg : "white",
               }}>
@@ -1004,11 +1016,11 @@ function ReviewDashboard({ files, setFiles, user, onComplete, onBack }) {
                   border: f.status === "approved" ? "none" : `2px solid ${f.status === "pending" ? P.purpleBorder : P.amberBorder}`,
                 }}>{f.status === "approved" ? "✓" : f.status === "pending" ? "⟳" : "!"}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: f.status === "approved" ? 400 : 600, color: f.status === "approved" ? P.muted : P.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div>
+                  <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: f.status === "approved" ? 400 : 600, color: f.status === "approved" ? P.muted : P.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: P.light, background: P.sand, padding: "3px 8px", borderRadius: 4, flexShrink: 0 }}>{f.discipline}</span>
+                {!isMobile && <span style={{ fontSize: 12, fontWeight: 600, color: P.light, background: P.sand, padding: "3px 8px", borderRadius: 4, flexShrink: 0 }}>{f.discipline}</span>}
                 {mine && <span style={{ width: 8, height: 8, borderRadius: 4, background: RC[actor].accent, flexShrink: 0 }} />}
-                <span style={{ fontSize: 16, color: P.light, flexShrink: 0 }}>›</span>
+                {!isMobile && <span style={{ fontSize: 16, color: P.light, flexShrink: 0 }}>›</span>}
               </div>
             );
           }}
@@ -1017,9 +1029,9 @@ function ReviewDashboard({ files, setFiles, user, onComplete, onBack }) {
 
       {/* Completion bar */}
       {allApproved && (
-        <div style={{ padding: "16px 24px", borderTop: `1px solid ${P.border}`, background: P.greenBg, flexShrink: 0, textAlign: "center" }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: P.green, marginRight: 16 }}>All {counts.all.toLocaleString()} files approved!</span>
-          <Btn onClick={() => onComplete(files)}>Complete Technical Review →</Btn>
+        <div style={{ padding: `16px ${padH}px`, borderTop: `1px solid ${P.border}`, background: P.greenBg, flexShrink: 0, textAlign: "center" }}>
+          <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 700, color: P.green, marginRight: 12 }}>All {counts.all.toLocaleString()} files approved!</span>
+          <Btn onClick={() => onComplete(files)}>Complete Review →</Btn>
         </div>
       )}
 
@@ -1240,13 +1252,13 @@ function DocSection({ step, index, fileTable }) {
   );
 }
 
-function ProjectDocument({ cur, stepData }) {
+function ProjectDocument({ cur, stepData, isMobile }) {
   return (
     <div style={{
-      background: "white", borderLeft: `1px solid ${P.border}`,
-      height: "calc(100vh - 56px)", display: "flex", flexDirection: "column",
+      background: "white", borderLeft: isMobile ? "none" : `1px solid ${P.border}`,
+      height: "100%", display: "flex", flexDirection: "column",
     }}>
-      <div style={{ padding: "20px 24px", borderBottom: `1.5px solid ${P.border}`, flexShrink: 0, background: P.bg }}>
+      <div style={{ padding: isMobile ? "16px 16px" : "20px 24px", borderBottom: `1.5px solid ${P.border}`, flexShrink: 0, background: P.bg }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: P.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: "white", flexShrink: 0 }}>📋</div>
           <div>
@@ -1256,7 +1268,7 @@ function ProjectDocument({ cur, stepData }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "24px 24px 24px 24px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24 }}>
         {cur === 0 && (
           <div style={{ textAlign: "center", padding: "40px 20px", color: P.light }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
@@ -1291,6 +1303,8 @@ export default function Reviewy() {
   const [view, setView] = useState("timeline");
   const [files, setFiles] = useState(INIT_FILES);
   const [stepData, setStepData] = useState({});
+  const [mobileTab, setMobileTab] = useState("workflow");
+  const isMobile = useIsMobile();
 
   const user = UM[role];
   const person = PEOPLE[user];
@@ -1315,78 +1329,108 @@ export default function Reviewy() {
 
   const st = (i) => i < cur ? "complete" : i === cur ? "active" : "locked";
 
+  const navHeight = isMobile ? 48 : 56;
+  const contentHeight = `calc(100vh - ${navHeight}px${isMobile ? " - 44px" : ""})`;
+
   return (
     <div style={{ minHeight: "100vh", background: P.bg, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
       {/* Nav */}
-      <div style={{ background: "white", borderBottom: `1px solid ${P.border}`, padding: "0 32px", height: 56, display: "flex", alignItems: "center", gap: 16 }}>
-        <span style={{ fontSize: 18, fontWeight: 800, color: P.text, letterSpacing: "-0.03em" }}>reviewy</span>
-        <span style={{ color: P.border, fontSize: 20, fontWeight: 300 }}>/</span>
-        <span style={{ fontSize: 15, fontWeight: 600, color: P.muted }}>New Auditorium — Lincoln High</span>
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-          <Av id={user} size={28} />
-          <span style={{ fontSize: 15, fontWeight: 600, color: P.text }}>{person.name}</span>
+      <div style={{ background: "white", borderBottom: `1px solid ${P.border}`, padding: isMobile ? "0 16px" : "0 32px", height: navHeight, display: "flex", alignItems: "center", gap: isMobile ? 10 : 16 }}>
+        <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: P.text, letterSpacing: "-0.03em" }}>reviewy</span>
+        {!isMobile && <>
+          <span style={{ color: P.border, fontSize: 20, fontWeight: 300 }}>/</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: P.muted }}>New Auditorium — Lincoln High</span>
+        </>}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: isMobile ? 8 : 12 }}>
+          <Av id={user} size={isMobile ? 24 : 28} />
+          {!isMobile && <span style={{ fontSize: 15, fontWeight: 600, color: P.text }}>{person.name}</span>}
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", height: "calc(100vh - 56px)" }}>
+      {/* Mobile tab bar */}
+      {isMobile && (
+        <div style={{ display: "flex", background: "white", borderBottom: `1px solid ${P.border}`, height: 44, flexShrink: 0 }}>
+          {[
+            ["workflow", view === "review" ? "File Review" : "Workflow"],
+            ["spec", "Specification"],
+          ].map(([key, label]) => (
+            <button key={key} onClick={() => setMobileTab(key)} style={{
+              flex: 1, background: "none", border: "none", fontFamily: "inherit", cursor: "pointer",
+              fontSize: 14, fontWeight: 700, color: mobileTab === key ? P.blue : P.muted,
+              borderBottom: mobileTab === key ? `2.5px solid ${P.blue}` : "2.5px solid transparent",
+              padding: 0,
+            }}>{label}</button>
+          ))}
+        </div>
+      )}
+
+      {/* Layout: two-column desktop, single panel mobile */}
+      <div style={isMobile
+        ? { height: contentHeight }
+        : { display: "grid", gridTemplateColumns: "1fr 420px", height: contentHeight }
+      }>
         {/* Left column: timeline or review dashboard */}
-        {view === "review" ? (
-          <ReviewDashboard
-            files={files} setFiles={setFiles} user={user}
-            onComplete={advance} onBack={() => setView("timeline")}
-          />
-        ) : (
-          <div style={{ overflowY: "auto", height: "calc(100vh - 56px)" }}>
-            <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 32px 120px" }}>
-              <div style={{ marginBottom: 36 }}>
-                <h1 style={{ fontSize: 30, fontWeight: 800, color: P.text, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-                  New Auditorium — Lincoln High School
-                </h1>
-                <div style={{ display: "flex", gap: 8, marginTop: 10, fontSize: 15, color: P.muted, flexWrap: "wrap", alignItems: "center" }}>
-                  <span>Central Valley USD</span>
-                  <span style={{ color: P.light }}>·</span>
-                  <span>CN-2025-0847</span>
-                  <span style={{ color: P.light }}>·</span>
-                  <span style={{ fontWeight: 700, color: done ? P.green : P.amber }}>
-                    {done ? "✓ Complete" : `Step ${cur + 1} of ${STEPS.length}`}
-                  </span>
-                  {!done && <>
+        {(!isMobile || mobileTab === "workflow") && (
+          view === "review" ? (
+            <ReviewDashboard
+              files={files} setFiles={setFiles} user={user}
+              onComplete={advance} onBack={() => setView("timeline")}
+              isMobile={isMobile}
+            />
+          ) : (
+            <div style={{ overflowY: "auto", height: contentHeight }}>
+              <div style={{ maxWidth: 960, margin: "0 auto", padding: isMobile ? "24px 16px 100px" : "40px 32px 120px" }}>
+                <div style={{ marginBottom: isMobile ? 24 : 36 }}>
+                  <h1 style={{ fontSize: isMobile ? 22 : 30, fontWeight: 800, color: P.text, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                    New Auditorium — Lincoln High School
+                  </h1>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10, fontSize: isMobile ? 13 : 15, color: P.muted, flexWrap: "wrap", alignItems: "center" }}>
+                    <span>Central Valley USD</span>
                     <span style={{ color: P.light }}>·</span>
-                    {myTurn
-                      ? <span style={{ fontWeight: 700, color: rc.accent }}>● Action needed</span>
-                      : <span style={{ color: P.light }}>Waiting on {PEOPLE[ACTOR_TO_PERSON[active.actor]]?.short || "others"} to {active.waitingDesc || "complete this step"}</span>}
-                  </>}
+                    <span>CN-2025-0847</span>
+                    <span style={{ color: P.light }}>·</span>
+                    <span style={{ fontWeight: 700, color: done ? P.green : P.amber }}>
+                      {done ? "✓ Complete" : `Step ${cur + 1} of ${STEPS.length}`}
+                    </span>
+                    {!done && <>
+                      <span style={{ color: P.light }}>·</span>
+                      {myTurn
+                        ? <span style={{ fontWeight: 700, color: rc.accent }}>● Action needed</span>
+                        : <span style={{ color: P.light }}>Waiting on {PEOPLE[ACTOR_TO_PERSON[active.actor]]?.short || "others"} to {active.waitingDesc || "complete this step"}</span>}
+                    </>}
+                  </div>
                 </div>
+
+                {done && (
+                  <div style={{ background: P.greenBg, border: `2px solid ${P.greenBorder}`, borderRadius: 14, padding: isMobile ? "20px 16px" : "28px 32px", marginBottom: 32, textAlign: "center" }}>
+                    <div style={{ fontSize: 36, marginBottom: 10 }}>✓</div>
+                    <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: P.green }}>Project Complete</div>
+                    <div style={{ fontSize: isMobile ? 14 : 16, color: P.muted, marginTop: 8 }}>All steps finished. Certificate of occupancy submitted.</div>
+                  </div>
+                )}
+
+                {STEPS.map((step, i) => (
+                  <Node key={step.id} step={step} stepNum={i} state={st(i)} isLast={i === STEPS.length - 1}
+                    user={user} onDone={advance} expComp={expComp}
+                    onToggle={id => setExpComp(prev => prev === id ? null : id)}
+                    view={view} setView={setView} files={files} />
+                ))}
               </div>
-
-              {done && (
-                <div style={{ background: P.greenBg, border: `2px solid ${P.greenBorder}`, borderRadius: 14, padding: "28px 32px", marginBottom: 32, textAlign: "center" }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>✓</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: P.green }}>Project Complete</div>
-                  <div style={{ fontSize: 16, color: P.muted, marginTop: 8 }}>All steps finished. Certificate of occupancy submitted.</div>
-                </div>
-              )}
-
-              {STEPS.map((step, i) => (
-                <Node key={step.id} step={step} stepNum={i} state={st(i)} isLast={i === STEPS.length - 1}
-                  user={user} onDone={advance} expComp={expComp}
-                  onToggle={id => setExpComp(prev => prev === id ? null : id)}
-                  view={view} setView={setView} files={files} />
-              ))}
             </div>
-          </div>
+          )
         )}
 
         {/* Document panel */}
-        <ProjectDocument cur={cur} stepData={stepData} />
+        {(!isMobile || mobileTab === "spec") && (
+          <ProjectDocument cur={cur} stepData={stepData} isMobile={isMobile} />
+        )}
       </div>
 
       {/* Demo switcher */}
       <div style={{
-        position: "fixed", bottom: 12, right: 12, zIndex: 100,
+        position: "fixed", bottom: isMobile ? 56 : 12, right: 12, zIndex: 100,
         background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)",
         borderRadius: 20, padding: "5px 8px",
         display: "flex", alignItems: "center", gap: 3, opacity: 0.7,
