@@ -604,15 +604,26 @@ const AVAILABLE_REVIEWERS = [
 ];
 
 function AssignReviewersForm({ onComplete }) {
+  // selected: [{ id, name, discipline, reviewTypes: ["mep"|"architectural"] }]
   const [selected, setSelected] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const toggle = (reviewer) => {
+  const toggleReviewer = (reviewer) => {
     setSelected(prev =>
       prev.find(r => r.id === reviewer.id)
         ? prev.filter(r => r.id !== reviewer.id)
-        : [...prev, reviewer]
+        : [...prev, { ...reviewer, reviewTypes: ["mep", "architectural"] }]
     );
+  };
+
+  const toggleReviewType = (reviewerId, type) => {
+    setSelected(prev => prev.map(r => {
+      if (r.id !== reviewerId) return r;
+      const has = r.reviewTypes.includes(type);
+      const next = has ? r.reviewTypes.filter(t => t !== type) : [...r.reviewTypes, type];
+      if (next.length === 0) return r; // must have at least one
+      return { ...r, reviewTypes: next };
+    }));
   };
 
   const inp = { width: "100%", padding: "12px 14px", border: `1.5px solid ${P.border}`, borderRadius: 8, fontSize: 16, fontFamily: "inherit", background: "white", boxSizing: "border-box" };
@@ -621,13 +632,15 @@ function AssignReviewersForm({ onComplete }) {
   return (
     <div>
       <h3 style={{ fontSize: 20, fontWeight: 800, color: P.text, margin: "0 0 20px 0" }}>Assign Reviewers</h3>
-      <p style={{ fontSize: 15, color: P.muted, margin: "0 0 20px 0", lineHeight: 1.55 }}>Select one or more reviewers for this technical review. Each reviewer will be assigned based on their discipline.</p>
+      <p style={{ fontSize: 15, color: P.muted, margin: "0 0 20px 0", lineHeight: 1.55 }}>Select reviewers and assign them to MEP review, architectural review, or both.</p>
 
       <label style={label}>Reviewers</label>
       <div style={{ position: "relative", marginBottom: 20 }}>
+        {/* Click-outside backdrop */}
+        {dropdownOpen && <div onClick={() => setDropdownOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />}
         <div onClick={() => setDropdownOpen(!dropdownOpen)} style={{
           ...inp, cursor: "pointer", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, minHeight: 48,
-          borderColor: dropdownOpen ? P.blue : P.border,
+          borderColor: dropdownOpen ? P.blue : P.border, position: "relative", zIndex: 41,
         }}>
           {selected.length === 0 && <span style={{ color: P.light }}>Select reviewers...</span>}
           {selected.map(r => (
@@ -637,7 +650,7 @@ function AssignReviewersForm({ onComplete }) {
               background: P.purpleBg, color: P.purple, border: `1px solid ${P.purpleBorder}`,
             }}>
               {r.name}
-              <span onClick={(e) => { e.stopPropagation(); toggle(r); }} style={{ cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</span>
+              <span onClick={(e) => { e.stopPropagation(); toggleReviewer(r); }} style={{ cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</span>
             </span>
           ))}
         </div>
@@ -650,7 +663,7 @@ function AssignReviewersForm({ onComplete }) {
             {AVAILABLE_REVIEWERS.map(r => {
               const isSelected = selected.find(s => s.id === r.id);
               return (
-                <div key={r.id} onClick={() => toggle(r)} style={{
+                <div key={r.id} onClick={() => toggleReviewer(r)} style={{
                   padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
                   background: isSelected ? P.purpleBg : "white", borderBottom: `1px solid ${P.borderLight}`,
                 }}>
@@ -673,19 +686,34 @@ function AssignReviewersForm({ onComplete }) {
       {selected.length > 0 && (
         <div style={{ marginBottom: 20 }}>
           <label style={label}>Selected ({selected.length})</label>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {selected.map(r => (
               <div key={r.id} style={{
-                display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
-                background: P.sand, borderRadius: 10, border: `1px solid ${P.border}`,
+                padding: "14px 16px", background: P.sand, borderRadius: 10, border: `1px solid ${P.border}`,
               }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 32, background: P.purple, color: "white",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, flexShrink: 0,
-                }}>{r.name.split(" ").map(n => n[0]).slice(0, 2).join("")}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: P.text }}>{r.name}</div>
-                  <div style={{ fontSize: 13, color: P.muted }}>{r.discipline}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 32, background: P.purple, color: "white",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, flexShrink: 0,
+                  }}>{r.name.split(" ").map(n => n[0]).slice(0, 2).join("")}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: P.text }}>{r.name}</div>
+                    <div style={{ fontSize: 13, color: P.muted }}>{r.discipline}</div>
+                  </div>
+                  <span onClick={() => toggleReviewer(r)} style={{ cursor: "pointer", fontSize: 18, color: P.light, lineHeight: 1, padding: "0 4px" }}>×</span>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[["mep", "MEP Review"], ["architectural", "Architectural Review"]].map(([key, lbl]) => {
+                    const active = r.reviewTypes.includes(key);
+                    return (
+                      <button key={key} onClick={() => toggleReviewType(r.id, key)} style={{
+                        padding: "6px 12px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                        background: active ? (key === "mep" ? P.blueBg : P.amberBg) : "white",
+                        color: active ? (key === "mep" ? P.blue : P.amber) : P.light,
+                        border: `1.5px solid ${active ? (key === "mep" ? P.blueBorder : P.amberBorder) : P.borderLight}`,
+                      }}>{active ? "✓ " : ""}{lbl}</button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -694,7 +722,7 @@ function AssignReviewersForm({ onComplete }) {
       )}
 
       <Btn onClick={onComplete} color={RC.assigned_manager.accent}>
-        {selected.length > 0 ? `Start Review with ${selected.length} Reviewer${selected.length > 1 ? "s" : ""} →` : "Select at least one reviewer"}
+        {selected.length > 0 ? `Assign ${selected.length} Reviewer${selected.length > 1 ? "s" : ""} →` : "Select at least one reviewer"}
       </Btn>
     </div>
   );
